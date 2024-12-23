@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/tags/index.html</loc>
+    
+    <lastmod>2024-12-23</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/link/index.html</loc>
+    
+    <lastmod>2024-12-23</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/about/index.html</loc>
+    
+    <lastmod>2024-12-23</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/categories/index.html</loc>
+    
+    <lastmod>2024-12-23</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/articles/3bd2b3bf9b01/</loc>
+    
+    <lastmod>2024-12-23</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/articles/1b0e6333027f/</loc>
+    
+    <lastmod>2024-12-23</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/articles/aee5356b84e9/</loc>
+    
+    <lastmod>2024-12-23</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+
+  <url>
+    <loc>https://blog.westlordnote.xyz/</loc>
+    <lastmod>2024-12-23</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/tags/cloudflare/</loc>
+    <lastmod>2024-12-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/tags/serverless/</loc>
+    <lastmod>2024-12-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/tags/Hexo/</loc>
+    <lastmod>2024-12-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/tags/%E5%8D%9A%E5%AE%A2/</loc>
+    <lastmod>2024-12-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/tags/Github-Pages/</loc>
+    <lastmod>2024-12-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/tags/%E6%B5%8B%E8%AF%95/</loc>
+    <lastmod>2024-12-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/categories/%E4%BF%A1%E6%81%AF%E4%B8%8E%E7%94%B5%E5%AD%90%E7%9A%84%E7%94%9F%E6%B4%BB/</loc>
+    <lastmod>2024-12-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/categories/%E9%97%B2%E8%B0%88/</loc>
+    <lastmod>2024-12-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/categories/%E4%BF%A1%E6%81%AF%E4%B8%8E%E7%94%B5%E5%AD%90%E7%9A%84%E7%94%9F%E6%B4%BB/Cloudflare%E5%A4%A7%E5%96%84%E4%BA%BA/</loc>
+    <lastmod>2024-12-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/categories/%E4%BF%A1%E6%81%AF%E4%B8%8E%E7%94%B5%E5%AD%90%E7%9A%84%E7%94%9F%E6%B4%BB/%E8%87%AA%E5%BB%BA%E5%8D%9A%E5%AE%A2%E4%B8%A4%E4%B8%89%E4%BA%8B/</loc>
+    <lastmod>2024-12-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.westlordnote.xyz/categories/%E9%97%B2%E8%B0%88/%E6%B5%8B%E8%AF%95/</loc>
+    <lastmod>2024-12-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+</urlset>

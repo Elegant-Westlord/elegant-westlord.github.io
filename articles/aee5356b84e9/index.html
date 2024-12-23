@@ -1,0 +1,286 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Cloudflare大善人———基于Cloudflare Worker的自托管尝试（一） | Westlord的随笔</title><meta name="author" content="Elegant Westlord"><meta name="copyright" content="Elegant Westlord"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Cloudflare Worker简介随着云服务发展日渐完善，以亚马逊云的 AWS Lambda 为首的 Serverless（无服务器应用）服务早在几年前就已经开始普及。 Serverless 服务商提供了一个无需预置或管理基础设施即可运行代码的环境，换句话说就是现在不仅不需要管理自己的硬件服务器、网络等，甚至连购置云服务器或者容器平台都不再需要，只要用户编写和部署代码到 Serverless">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Cloudflare大善人———基于Cloudflare Worker的自托管尝试（一）">
+<meta property="og:url" content="https://blog.westlordnote.xyz/articles/aee5356b84e9/index.html">
+<meta property="og:site_name" content="Westlord的随笔">
+<meta property="og:description" content="Cloudflare Worker简介随着云服务发展日渐完善，以亚马逊云的 AWS Lambda 为首的 Serverless（无服务器应用）服务早在几年前就已经开始普及。 Serverless 服务商提供了一个无需预置或管理基础设施即可运行代码的环境，换句话说就是现在不仅不需要管理自己的硬件服务器、网络等，甚至连购置云服务器或者容器平台都不再需要，只要用户编写和部署代码到 Serverless">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://blog.westlordnote.xyz/images/Cloudflare.png">
+<meta property="article:published_time" content="2024-12-22T05:48:53.000Z">
+<meta property="article:modified_time" content="2024-12-23T08:13:57.775Z">
+<meta property="article:author" content="Elegant Westlord">
+<meta property="article:tag" content="cloudflare">
+<meta property="article:tag" content="serverless">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog.westlordnote.xyz/images/Cloudflare.png"><link rel="shortcut icon" href="/images/logo.png"><link rel="canonical" href="https://blog.westlordnote.xyz/articles/aee5356b84e9/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="BOJMVntOoRQNQ2-zTPH9tvve27Ee458KxGUgUn7BgxE"/><link rel="stylesheet" href="/css/index.css?v=5.2.2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"limitCount":300,"languages":{"author":"作者: Elegant Westlord","link":"链接: ","source":"来源: Westlord的随笔","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。"}},
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Cloudflare大善人———基于Cloudflare Worker的自托管尝试（一）',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  isShuoshuo: false
+}</script><link rel="stylesheet" href="/CSS/font.css"><meta name="generator" content="Hexo 7.3.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://s2.loli.net/2024/10/09/wFSitvGRX8KjIBe.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">3</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">6</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/images/Cloudflare.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/images/logo.png" alt="Logo"></a><a class="nav-page-title" href="/"><span class="site-name">Cloudflare大善人———基于Cloudflare Worker的自托管尝试（一）</span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Cloudflare大善人———基于Cloudflare Worker的自托管尝试（一）<a class="post-edit-link" href="https://github.com/Elegant-Westlord/westlordnote/edit/main/source/_posts/CloudflareWorker.md" title="编辑" target="_blank"><i class="fas fa-pencil-alt"></i></a></h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-12-22T05:48:53.000Z" title="发表于 2024-12-22 13:48:53">2024-12-22</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-12-23T08:13:57.775Z" title="更新于 2024-12-23 16:13:57">2024-12-23</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E4%BF%A1%E6%81%AF%E4%B8%8E%E7%94%B5%E5%AD%90%E7%9A%84%E7%94%9F%E6%B4%BB/">信息与电子的生活</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E4%BF%A1%E6%81%AF%E4%B8%8E%E7%94%B5%E5%AD%90%E7%9A%84%E7%94%9F%E6%B4%BB/Cloudflare%E5%A4%A7%E5%96%84%E4%BA%BA/">Cloudflare大善人</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><div id="post-outdate-notice" data="{&quot;limitDay&quot;:120,&quot;messagePrev&quot;:&quot;该文章已有&quot;,&quot;messageNext&quot;:&quot;日未更新，内容可能过时，欢迎在评论区补充指正。&quot;,&quot;postUpdate&quot;:&quot;2024-12-23 16:13:57&quot;}" hidden></div><h2 id="Cloudflare-Worker简介"><a href="#Cloudflare-Worker简介" class="headerlink" title="Cloudflare Worker简介"></a>Cloudflare Worker简介</h2><p>随着云服务发展日渐完善，以亚马逊云的 AWS Lambda 为首的 Serverless（无服务器应用）服务早在几年前就已经开始普及。</p>
+<p>Serverless 服务商提供了一个无需预置或管理基础设施即可运行代码的环境，换句话说就是现在不仅不需要管理自己的硬件服务器、网络等，甚至连购置云服务器或者容器平台都不再需要，只要用户编写和部署代码到 Serverless 平台即可。</p>
+<p>CF 借助于他们分布在全球每个角落的大量边缘节点的优势，与传统无服务供应商将 Serverless 部署与各个中心机房不同，CF workers 将用户的函数服务部署在 他们的边缘网络（Edge Network）中，这使函数服务更加接近于客户端测，从而提供更优质的体验。</p>
+<p>（抄的，大家知道Cloudflare作为cdn服务商，可以利用cdn网络的优势来实现 Serverless 应用即可）</p>
+<p>Cloudflare Worker免费方案拥有<strong>10万次&#x2F;日</strong>的请求限额，对于个人使用已经足够，基本没有被墙的cdn条件也给布置一些<strong>反向代理</strong>类的应用创造了条件。</p>
+<h2 id="Cloudflare-Worker的用法"><a href="#Cloudflare-Worker的用法" class="headerlink" title="Cloudflare Worker的用法"></a>Cloudflare Worker的用法</h2><p>首先登录Cloudflare账号</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/articles/aee5356b84e9/%E7%99%BB%E5%BD%95Cloudflare.png" class="" title="登录Cloudflare">
+
+<p>由于Worker的默认子域workers.dev被墙（废话这么多人用一个域名不被墙才怪），需要自己有一个域名并在Cloudflare处托管，可以按照我在<a href="/articles/1b0e6333027f/">Hexo搭建博客部署到Github Pages的个人经验</a>上的写的办法，注册us.kg域名，或者也可以按照下面这个Youtube视频的办法。</p>
+<iframe src="//www.youtube.com/embed/tHjgouUbE3c" frameborder="0" allowfullscreen=""></iframe>
+
+<p>打开Worker页面，点击创建</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/articles/aee5356b84e9/Workers%E5%92%8CPages.png" class="" title="Worker页面">
+
+<p>创建成功后点击编辑代码，就可以进入Workers的代码编辑器，其实是一个在线VSCode</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/articles/aee5356b84e9/Worker%E9%83%A8%E7%BD%B2%E6%88%90%E5%8A%9F.png" class="" title="Worker部署成功页面">
+
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/articles/aee5356b84e9/Worker%E7%BC%96%E8%BE%91%E5%99%A8.png" class="" title="Worker在线编辑器">
+
+<p>部署之后可以到设置-域与路由处添加自定义域名</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/articles/aee5356b84e9/Worker%E6%B7%BB%E5%8A%A0%E8%87%AA%E5%AE%9A%E4%B9%89%E5%9F%9F%E5%90%8D.png" class="" title="Worker添加自定义域">
+
+<table><tr>
+<td><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="选择自定义域名.png" border=0 /></td>
+<td><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="自定义域名输入.png" border=0 /></td>
+</tr></table>
+
+<p>这样就可以用自己的域名访问Cloudflare Worker上部署的项目了。</p>
+<h2 id="Cloudflare-Worker上的的DOH转发器"><a href="#Cloudflare-Worker上的的DOH转发器" class="headerlink" title="Cloudflare Worker上的的DOH转发器"></a>Cloudflare Worker上的的DOH转发器</h2><p>这个项目来自<a target="_blank" rel="noopener" href="https://github.com/tina-hello/doh-cf-workers">tina-hello&#x2F;doh-cf-workers</a>。弄这个的背景是我常用的代理软件Mihomo Party和Flclash都有覆写配置文件DNS的选项，我就想自己搭建一个利用Cloudflare边缘节点的dns-over-https服务器，搭配自己的域名，实现对被阻断的cloudflare官方doh的代理。</p>
+<p>代码并不复杂，原始项目也是开源的，简单来说就是把cloudflare或者其它DOH服务进行反向代理，在请求dns解析时将解析转发给给定的DOH服务器。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> __defProp = <span class="title class_">Object</span>.<span class="property">defineProperty</span>;</span><br><span class="line"><span class="keyword">var</span> <span class="title function_">__name</span> = (<span class="params">target, value</span>) =&gt; <span class="title function_">__defProp</span>(target, <span class="string">&quot;name&quot;</span>, &#123; value, <span class="attr">configurable</span>: <span class="literal">true</span> &#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// index.js</span></span><br><span class="line"><span class="keyword">var</span> doh = <span class="string">&quot;https://security.cloudflare-dns.com/dns-query&quot;</span>;</span><br><span class="line"><span class="keyword">var</span> dohjson = <span class="string">&quot;https://security.cloudflare-dns.com/dns-query&quot;</span>;</span><br><span class="line"><span class="keyword">var</span> contype = <span class="string">&quot;application/dns-message&quot;</span>;</span><br><span class="line"><span class="keyword">var</span> jstontype = <span class="string">&quot;application/dns-json&quot;</span>;</span><br><span class="line"><span class="keyword">var</span> path = <span class="string">&quot;&quot;</span>;</span><br><span class="line"><span class="keyword">var</span> r404 = <span class="keyword">new</span> <span class="title class_">Response</span>(<span class="literal">null</span>, &#123; <span class="attr">status</span>: <span class="number">404</span> &#125;);</span><br><span class="line"><span class="keyword">var</span> doh_cf_workers_default = &#123;</span><br><span class="line">  <span class="keyword">async</span> <span class="title function_">fetch</span>(<span class="params">r, env, ctx</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_">handleRequest</span>(r);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">async</span> <span class="keyword">function</span> <span class="title function_">handleRequest</span>(<span class="params">request</span>) &#123;</span><br><span class="line">  <span class="keyword">let</span> res = r404;</span><br><span class="line">  <span class="keyword">const</span> &#123; method, headers, url &#125; = request;</span><br><span class="line">  <span class="keyword">const</span> &#123; searchParams, pathname &#125; = <span class="keyword">new</span> <span class="title function_">URL</span>(url);</span><br><span class="line">  <span class="keyword">if</span> (!pathname.<span class="title function_">startsWith</span>(path)) &#123;</span><br><span class="line">    <span class="keyword">return</span> r404;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (method == <span class="string">&quot;GET&quot;</span> &amp;&amp; searchParams.<span class="title function_">has</span>(<span class="string">&quot;dns&quot;</span>)) &#123;</span><br><span class="line">    res = <span class="title function_">fetch</span>(doh + <span class="string">&quot;?dns=&quot;</span> + searchParams.<span class="title function_">get</span>(<span class="string">&quot;dns&quot;</span>), &#123;</span><br><span class="line">      <span class="attr">method</span>: <span class="string">&quot;GET&quot;</span>,</span><br><span class="line">      <span class="attr">headers</span>: &#123;</span><br><span class="line">        <span class="string">&quot;Accept&quot;</span>: contype</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (method === <span class="string">&quot;POST&quot;</span> &amp;&amp; headers.<span class="title function_">get</span>(<span class="string">&quot;content-type&quot;</span>) === contype) &#123;</span><br><span class="line">    <span class="keyword">const</span> rostream = request.<span class="property">body</span>;</span><br><span class="line">    res = <span class="title function_">fetch</span>(doh, &#123;</span><br><span class="line">      <span class="attr">method</span>: <span class="string">&quot;POST&quot;</span>,</span><br><span class="line">      <span class="attr">headers</span>: &#123;</span><br><span class="line">        <span class="string">&quot;Accept&quot;</span>: contype,</span><br><span class="line">        <span class="string">&quot;Content-Type&quot;</span>: contype</span><br><span class="line">      &#125;,</span><br><span class="line">      <span class="attr">body</span>: rostream</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (method === <span class="string">&quot;GET&quot;</span> &amp;&amp; headers.<span class="title function_">get</span>(<span class="string">&quot;Accept&quot;</span>) === jstontype) &#123;</span><br><span class="line">    <span class="keyword">const</span> search = <span class="keyword">new</span> <span class="title function_">URL</span>(url).<span class="property">search</span>;</span><br><span class="line">    res = <span class="title function_">fetch</span>(dohjson + search, &#123;</span><br><span class="line">      <span class="attr">method</span>: <span class="string">&quot;GET&quot;</span>,</span><br><span class="line">      <span class="attr">headers</span>: &#123;</span><br><span class="line">        <span class="string">&quot;Accept&quot;</span>: jstontype</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> res;</span><br><span class="line">&#125;</span><br><span class="line"><span class="title function_">__name</span>(handleRequest, <span class="string">&quot;handleRequest&quot;</span>);</span><br><span class="line"><span class="keyword">export</span> &#123;</span><br><span class="line">  doh_cf_workers_default <span class="keyword">as</span> <span class="keyword">default</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="comment">//# sourceMappingURL=index.js.map</span></span><br></pre></td></tr></table></figure>
+
+<p>另外也可以尝试一下Mozilla开源的<a target="_blank" rel="noopener" href="https://github.com/serverless-dns/serverless-dns">serverless dns项目</a>，这是基于Mozilla的Rethink DNS的DNS项目，支持DOH和DOT，还可以设置广告和追踪器过滤，我也部署了一个，打算后面改造家庭网络的过程中作为无污染DNS服务器的上游使用。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/articles/aee5356b84e9/serverless-dns.png" class="" title="serverless-dns的过滤设置器">
+
+<h2 id="用Cloudflare-Worker反代下载Docker镜像"><a href="#用Cloudflare-Worker反代下载Docker镜像" class="headerlink" title="用Cloudflare Worker反代下载Docker镜像"></a>用Cloudflare Worker反代下载Docker镜像</h2><p>感谢青柠大佬的帮助，在Docker镜像站大量关闭、Docker镜像拉取困难的环境下，这个反代给一般路过开发者和玩家不少选择。</p>
+<p>在这里给出大佬的原链接，有需要的可以自己部署一个：<a target="_blank" rel="noopener" href="https://qninq.cn/archives/cfdockerfast.html">https://qninq.cn/archives/cfdockerfast.html</a></p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/articles/aee5356b84e9/dockerproxy.png" class="" title="我的docker镜像代理的效果">
+
+
+<h2 id="用Cloudflare-Worker反代Github资源"><a href="#用Cloudflare-Worker反代Github资源" class="headerlink" title="用Cloudflare Worker反代Github资源"></a>用Cloudflare Worker反代Github资源</h2><p>由于各种原因，Github相关的资源在中国内地访问并不顺畅，尤其是我的移动宽带，是知名的墙中墙。有一个Github的反代还是比较重要的。</p>
+<p>这个操作学自Youtube博主<a target="_blank" rel="noopener" href="https://www.youtube.com/@qichiyu">七尺宇</a>的<a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=PDQT74-gOg8">视频</a>。</p>
+<iframe src="//www.youtube.com/embed/PDQT74-gOg8" frameborder="0" allowfullscreen=""></iframe>
+
+<p>其使用的是<a target="_blank" rel="noopener" href="https://github.com/hunshcn/gh-proxy">这位老哥的项目</a>。这个项目也是可以使用Cloudflare Worker来部署的。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/articles/aee5356b84e9/gh-proxy.png" class="" title="gh-proxy的效果">
+
+
+<h2 id="余谈"><a href="#余谈" class="headerlink" title="余谈"></a>余谈</h2><p>Cloudflare的cdn节点在全中国的访问速度依旧飘忽不定，大约在50-300ms不等，但至少比访问不上好。</p>
+<p>优选IP的玩法我还没学会，等学会了再写吧。</p>
+<p>在学习Cloudflare Worker的过程中，我还了解到了一个逆天玩意——用Cloudflare Worker部署Vless节点。虽然我最后还是尝试了一下，但是要知道这是明确违反<a target="_blank" rel="noopener" href="https://www.cloudflare.com/zh-cn/terms/">Cloudflare的用户条款</a>的</p>
+<blockquote>
+<p>Unless otherwise expressly permitted in writing by Cloudflare, you will not and you have no right to:</p>
+<p>…</p>
+<p>(j) use the Services to provide a virtual private network or other similar proxy services.</p>
+</blockquote>
+<p>所以在这里我就不推荐了，确有需要者可以自行谷歌。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a target="_blank" rel="noopener" href="https://github.com/Elegant-Westlord">Elegant Westlord</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://blog.westlordnote.xyz/articles/aee5356b84e9/">https://blog.westlordnote.xyz/articles/aee5356b84e9/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://blog.westlordnote.xyz" target="_blank">Westlord的随笔</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/cloudflare/">cloudflare</a><a class="post-meta__tags" href="/tags/serverless/">serverless</a></div><div class="post-share"><div class="social-share" data-image="/images/Cloudflare.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.4/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.4/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/articles/1b0e6333027f/" title="Hexo搭建博客部署到Github Pages的个人经验"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/images/hexo.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">Hexo搭建博客部署到Github Pages的个人经验</div></div><div class="info-2"><div class="info-item-1">安装Hexo先是要安装node.js和npm，注意node.js版本必须在14以上（在Ubuntu上吃了亏，我的node.js是apt官方源安装的，只有12，最后用nvm安装才安装了个node.js20），npm版本需要和node.js匹配，具体见https://nodejs.org/en/about/previous-releases   随后安装hexo 1npm install -g hexo-cli  使用hexo -v查看版本     设置Github Page创建一个Github仓库，格式必须为&lt;用户名&gt;.github.io 仓库创建好后，创建一个index.html文件，文件可以是任意格式的网页，如下所示： 123456789101112&lt;!DOCTYPE html&gt;&lt;html lang=&quot;en&quot;&gt;&lt;head&gt;    &lt;meta charset=&quot;UTF-8&quot;&gt;   ...</div></div></div></a></nav><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="giscus-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://s2.loli.net/2024/10/09/wFSitvGRX8KjIBe.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Elegant Westlord</div><div class="author-info-description">不积跬步，无以至千里；不积小流，无以成江海。</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">3</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">6</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Elegant-Westlord" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:elegantwestlord@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a><a class="social-icon" href="https://x.com/elegantwestlord" target="_blank" title="X（Twitter）"><i class="fab fa-x-twitter" style="color: #24292e;"></i></a><a class="social-icon" href="https://elegantwestlord.bsky.social" target="_blank" title="Bluesky"><i class="fab fa-bluesky" style="color: #4a7dbe;"></i></a><a class="social-icon" href="https://www.instagram.com/elegantwestlord" target="_blank" title="Instagram"><i class="fab fa-instagram" style="color: #e4405f;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">欢迎来到Westlord的随笔，共谈技术人生。</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Cloudflare-Worker%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">Cloudflare Worker简介</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Cloudflare-Worker%E7%9A%84%E7%94%A8%E6%B3%95"><span class="toc-number">2.</span> <span class="toc-text">Cloudflare Worker的用法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Cloudflare-Worker%E4%B8%8A%E7%9A%84%E7%9A%84DOH%E8%BD%AC%E5%8F%91%E5%99%A8"><span class="toc-number">3.</span> <span class="toc-text">Cloudflare Worker上的的DOH转发器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8Cloudflare-Worker%E5%8F%8D%E4%BB%A3%E4%B8%8B%E8%BD%BDDocker%E9%95%9C%E5%83%8F"><span class="toc-number">4.</span> <span class="toc-text">用Cloudflare Worker反代下载Docker镜像</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8Cloudflare-Worker%E5%8F%8D%E4%BB%A3Github%E8%B5%84%E6%BA%90"><span class="toc-number">5.</span> <span class="toc-text">用Cloudflare Worker反代Github资源</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%99%E8%B0%88"><span class="toc-number">6.</span> <span class="toc-text">余谈</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/articles/aee5356b84e9/" title="Cloudflare大善人———基于Cloudflare Worker的自托管尝试（一）"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/images/Cloudflare.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Cloudflare大善人———基于Cloudflare Worker的自托管尝试（一）"/></a><div class="content"><a class="title" href="/articles/aee5356b84e9/" title="Cloudflare大善人———基于Cloudflare Worker的自托管尝试（一）">Cloudflare大善人———基于Cloudflare Worker的自托管尝试（一）</a><time datetime="2024-12-22T05:48:53.000Z" title="发表于 2024-12-22 13:48:53">2024-12-22</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/articles/1b0e6333027f/" title="Hexo搭建博客部署到Github Pages的个人经验"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/images/hexo.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Hexo搭建博客部署到Github Pages的个人经验"/></a><div class="content"><a class="title" href="/articles/1b0e6333027f/" title="Hexo搭建博客部署到Github Pages的个人经验">Hexo搭建博客部署到Github Pages的个人经验</a><time datetime="2024-09-01T16:35:34.000Z" title="发表于 2024-09-02 00:35:34">2024-09-02</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/articles/3bd2b3bf9b01/" title="测试文章"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/images/%E6%9E%AB%E4%B8%B9%E5%B8%82%E4%B8%AD%E5%BF%83.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="测试文章"/></a><div class="content"><a class="title" href="/articles/3bd2b3bf9b01/" title="测试文章">测试文章</a><time datetime="2024-08-28T05:03:42.000Z" title="发表于 2024-08-28 13:03:42">2024-08-28</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2024 By Elegant Westlord</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.2.2"></script><script src="/js/main.js?v=5.2.2"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.isShuoshuo
+  const option = null
+
+  const getGiscusTheme = theme => theme === 'dark' ? 'dark' : 'light'
+
+  const createScriptElement = config => {
+    const ele = document.createElement('script')
+    Object.entries(config).forEach(([key, value]) => {
+      ele.setAttribute(key, value)
+    })
+    return ele
+  }
+
+  const loadGiscus = (el = document, key) => {
+    const mappingConfig = isShuoshuo
+      ? { 'data-mapping': 'specific', 'data-term': key }
+      : { 'data-mapping': (option && option['data-mapping']) || 'pathname' }
+
+    const giscusConfig = {
+      src: 'https://giscus.app/client.js',
+      'data-repo': 'Elegant-Westlord/elegant-westlord.github.io',
+      'data-repo-id': 'R_kgDOMpElag',
+      'data-category-id': 'DIC_kwDOMpElas4CiJgL',
+      'data-theme': getGiscusTheme(document.documentElement.getAttribute('data-theme')),
+      'data-reactions-enabled': '1',
+      crossorigin: 'anonymous',
+      async: true,
+      ...option,
+      ...mappingConfig
+    }
+
+    const scriptElement = createScriptElement(giscusConfig)
+
+    el.querySelector('#giscus-wrap').appendChild(scriptElement)
+
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGiscus = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+  }
+
+  const changeGiscusTheme = theme => {
+    const iframe = document.querySelector('#giscus-wrap iframe')
+    if (iframe) {
+      const message = {
+        giscus: {
+          setConfig: {
+            theme: getGiscusTheme(theme)
+          }
+        }
+      }
+      iframe.contentWindow.postMessage(message, 'https://giscus.app')
+    }
+  }
+
+  btf.addGlobalFn('themeChange', changeGiscusTheme, 'giscus')
+
+  if (isShuoshuo) {
+    'Giscus' === 'Giscus'
+      ? window.shuoshuoComment = { loadComment: loadGiscus }
+      : window.loadOtherComment = loadGiscus
+    return
+  }
+
+  if ('Giscus' === 'Giscus' || !false) {
+    if (false) btf.loadComment(document.getElementById('giscus-wrap'), loadGiscus)
+    else loadGiscus()
+  } else {
+    window.loadOtherComment = loadGiscus
+  }
+})()</script></div><script defer="defer" id="fluttering_ribbon" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.4/dist/canvas-fluttering-ribbon.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.4/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = true;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

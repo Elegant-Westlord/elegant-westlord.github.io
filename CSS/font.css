@@ -1,0 +1,13 @@
+@font-face{
+    font-family: 'Wenkai Mono';
+    font-display: swap;
+    src: url('font/LXGWWenKaiMono-Regular.ttf') format("truetype");
+}
+@font-face{
+    font-family: 'Wenkai';
+    font-display: swap;
+    src: url('font/LXGWWenKai-Regular.ttf') format("truetype");
+}
+body {
+    font-family: 'Wenkai Mono','Wenkai', sans-serif;
+}
